@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Funfair Color Spin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#071026; --card:#071226; --accent1:#8b5cf6; --accent2:#06b6d4; --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:radial-gradient(circle at 20% 10%, #0b1b2b 0%, #051025 40%, #02060a 100%);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:28px}
+    .wrap{width:1000px;max-width:98%;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:18px;padding:18px;box-shadow:0 12px 60px rgba(2,6,23,0.8);display:grid;grid-template-columns:1fr 360px;gap:18px}
+    .left{padding:18px}
+    .right{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:16px;border-radius:12px;display:none;}
+    h1{font-size:22px;margin:0 0 6px;letter-spacing:0.6px}
+    p.lead{margin:0 0 14px;color:#bcd3f4}
+    .slots{display:flex;gap:14px;align-items:center;justify-content:center;padding:22px;background:linear-gradient(180deg, rgba(255,255,255,0.01), transparent);border-radius:14px;border:1px solid rgba(255,255,255,0.03)}
+    .slot{width:120px;height:120px;border-radius:14px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.005));display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,0.02)}
+    .color-ball{width:86px;height:86px;border-radius:50%;transform:translateY(0);transition:transform 420ms cubic-bezier(.2,.9,.35,1), box-shadow 220ms, background 420ms}
+    .spin-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 18px;border-radius:12px;background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;color:white;font-weight:800;cursor:pointer;font-size:15px;box-shadow:0 12px 40px rgba(99,102,241,0.22)}
+    .spin-btn[disabled]{opacity:0.55;cursor:not-allowed}
+    .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px}
+    .card{background:rgba(255,255,255,0.02);padding:10px;border-radius:10px;min-width:120px}
+    .history{margin-top:12px;max-height:160px;overflow:auto;padding:10px;background:rgba(255,255,255,0.01);border-radius:8px}
+    .history .row{display:flex;gap:8px;align-items:center;padding:6px;border-bottom:1px dashed rgba(255,255,255,0.02)}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,0.03);font-weight:800}
+    .confetti{position:fixed;pointer-events:none;left:0;top:0;right:0;bottom:0;z-index:9999}
+    .footer{font-size:12px;color:#9fb3d8;margin-top:8px}
+    .controls{display:flex;gap:8px;align-items:center}
+    @keyframes pop {0%{transform:scale(0.6)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+    .pop{animation:pop 420ms ease}
+    .gear{position:fixed;top:20px;left:20px;font-size:28px;cursor:pointer;color:#fff;text-shadow:0 0 8px #fff;transition:transform 0.2s;z-index:99999}
+    .gear:hover{transform:rotate(45deg) scale(1.2);}
+    @media (max-width:900px){.wrap{grid-template-columns:1fr} .right{order:2}}
+  </style>
+</head>
+<body>
+  <div class="gear" id="gearIcon">⚙️</div>
+  <div class="wrap">
+    <div class="left">
+      <h1>Funfair Color Spin</h1>
+      <p class="lead">₹10 per spin. Match 3 colors to win.</p>
+      <div class="slots">
+        <div class="slot"><div id="ball0" class="color-ball"></div></div>
+        <div class="slot"><div id="ball1" class="color-ball"></div></div>
+        <div class="slot"><div id="ball2" class="color-ball"></div></div>
+      </div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div class="controls">
+          <button id="spinBtn" class="spin-btn">SPIN ₹10</button>
+          <button id="autoBtn" class="spin-btn" style="background:linear-gradient(90deg,#34d399,#60a5fa);">AUTO</button>
+          <button id="resetBtn" class="spin-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.06);color:#dbeafe;">RESET</button>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:#a9c0e6">Spins this session</div>
+          <div id="spinCount" style="font-weight:800;font-size:20px">0</div>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="card">LBM ID<br><strong id="balance">0</strong></div>
+        <div class="card">Wins<br><strong id="wins">0</strong></div>
+        <div class="card">Since last win<br><strong id="since">0</strong></div>
+        <div class="card">Cost/Payout<br><strong id="costp">₹10 → ₹100</strong></div>
+      </div>
+      <div class="history" id="history"></div>
+      <div class="footer">Made By SAM. Team Grade 10th. Thank You>.</div>
+    </div>
+
+    <div class="right" id="settingsPanel">
+      <h3>Secret Panel</h3>
+      <p style="color:#bcd3f4">Modify game or view summary below</p>
+      <label>Spin cost (₹): <input id="costInput" type="number" value="10" style="width:140px"></label><br>
+      <label>Payout (₹): <input id="payoutInput" type="number" value="100" style="width:140px"></label><br>
+      <label>Guarantee after spins: <input id="guaranteeInput" type="number" value="50" style="width:140px"></label><br>
+      <label>Colors: <input id="colorsInput" type="text" value="#ff3b3b,#ffd84d,#5ad0ff,#7c3aed" style="width:100%"></label><br>
+      <label>Auto spins per press: <input id="autoCountInput" type="number" value="10" style="width:140px"></label>
+      <h4 style="margin-top:18px">Game Summary</h4>
+      <div id="statsPanel" style="background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;font-size:14px;color:#cfe0ff;">
+        <div>Total Spins: <span id="statsSpins">0</span></div>
+        <div>Total Cost: ₹<span id="statsCost">0</span></div>
+        <div>Total Winnings: ₹<span id="statsWin">0</span></div>
+        <div>Profit: ₹<span id="statsProfit">0</span></div>
+      </div>
+    </div>
+  </div>
+  <canvas id="confettiCanvas" class="confetti"></canvas>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const gear=document.getElementById('gearIcon');
+      const panel=document.getElementById('settingsPanel');
+      let unlocked=false;
+      gear.addEventListener('click',()=>{
+        if(!unlocked){
+          const code=prompt("Enter Access Code:");
+          if(code==="SAM99"){unlocked=true;panel.style.display='block';}
+          else alert("Access Denied");
+        } else panel.style.display=(panel.style.display==='none'?'block':'none');
+      });
+
+      const STORAGE='funfair-v2';
+      const defaultColors=['#ff3b3b','#ffd84d','#5ad0ff','#7c3aed','#34d399','#f472b6'];
+      const balls=[ball0,ball1,ball2];
+      const spinBtn=document.getElementById('spinBtn');
+      const autoBtn=document.getElementById('autoBtn');
+      const resetBtn=document.getElementById('resetBtn');
+      const balanceEl=balance,winsEl=wins,spinEl=spinCount,sinceEl=since,historyEl=history;
+      const costIn=costInput,payIn=payoutInput,guarIn=guaranteeInput,colIn=colorsInput,autoIn=autoCountInput,costPEl=costp;
+      const s=JSON.parse(localStorage.getItem(STORAGE)||'{}');
+      const state={balance:s.balance??0,totalSpins:s.totalSpins??0,wins:s.wins??0,spinsSinceWin:s.spinsSinceWin??0};
+      function save(){localStorage.setItem(STORAGE,JSON.stringify(state));}
+      function colors(){return (colIn.value?colIn.value.split(','):defaultColors).map(x=>x.trim()).filter(Boolean);}
+      function update(){
+        balanceEl.textContent='₹'+state.balance;
+        winsEl.textContent=state.wins;
+        spinEl.textContent=state.totalSpins;
+        sinceEl.textContent=state.spinsSinceWin;
+        const cost=Number(costIn.value)||10,pay=Number(payIn.value)||100;
+        costPEl.textContent=`₹${cost} → ₹${pay}`;
+        const totalCost=state.totalSpins*cost,totalWin=state.wins*pay;
+        document.getElementById('statsSpins').textContent=state.totalSpins;
+        document.getElementById('statsCost').textContent=totalCost;
+        document.getElementById('statsWin').textContent=totalWin;
+        document.getElementById('statsProfit').textContent=totalCost-totalWin;
+      }
+      function pick(a){return a[Math.floor(Math.random()*a.length)];}
+      function setColor(el,c){el.style.background=`radial-gradient(circle at 30% 25%,rgba(255,255,255,0.55),rgba(255,255,255,0.05)10%),linear-gradient(180deg,${c},rgba(0,0,0,0.08))`;el.style.boxShadow=`0 12px 40px ${c}55`;el.classList.add('pop');setTimeout(()=>el.classList.remove('pop'),420);}
+      const canvas=confettiCanvas,ctx=canvas.getContext('2d');let conf=[];
+      function resize(){canvas.width=innerWidth;canvas.height=innerHeight;}addEventListener('resize',resize);resize();
+      function confetti(){conf=[];const cs=colors();for(let i=0;i<140;i++)conf.push({x:Math.random()*canvas.width,y:-20,vy:1+Math.random()*6,rv:Math.random()*360,s:6+Math.random()*8,ang:Math.random()*360,c:pick(cs)});requestAnimationFrame(draw);}
+      function draw(){ctx.clearRect(0,0,canvas.width,canvas.height);conf.forEach(p=>{p.y+=p.vy;p.vy+=0.05;p.ang+=p.rv*0.02;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.ang*Math.PI/180);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);ctx.restore();});conf=conf.filter(p=>p.y<canvas.height+40);if(conf.length)requestAnimationFrame(draw);}
+      let spinning=false;
+
+      // fixed spin() — force-win now guarantees a proper identical color triple
+      async function spin(){
+        if(spinning) return false;
+        spinning=true; spinBtn.disabled=true; autoBtn.disabled=true;
+        const COST=Number(costIn.value)||10, PAY=Number(payIn.value)||100, GUAR=Math.max(1,Number(guarIn.value)||50), COL=colors();
+
+        // machine profit increases by spin cost
+        state.balance += COST;
+        state.totalSpins++; state.spinsSinceWin++; update(); save();
+
+        for(let r=0;r<16;r++){
+          await new Promise(x=>setTimeout(x, 30 + r*10));
+          for(let j=0;j<3;j++) setColor(balls[j], pick(COL));
+        }
+
+        const force = (state.spinsSinceWin >= GUAR);
+        let result = [];
+        if(force){
+          // GUARANTEED identical color triple — fixed
+          const winColor = pick(COL);
+          result = [winColor, winColor, winColor];
+        } else {
+          result = [ pick(COL), pick(COL), pick(COL) ];
+        }
+
+        for(let i=0;i<3;i++) setColor(balls[i], result[i]);
+
+        const won = (result[0]===result[1] && result[1]===result[2]);
+        if(won){
+          // machine pays out the winning amount
+          state.balance -= PAY;
+          state.wins++; state.spinsSinceWin = 0;
+          confetti();
+        }
+
+        const row = document.createElement('div'); row.className='row';
+        const b = document.createElement('div'); b.className='badge'; b.textContent = won ? 'WIN' : 'LOSE';
+        const t = document.createElement('div'); t.style.flex='1'; t.textContent = `#${state.totalSpins} — ${result.join(' | ')}`;
+        const bal = document.createElement('div'); bal.textContent = '₹' + state.balance;
+        row.append(b,t,bal); historyEl.prepend(row); while(historyEl.children.length>80) historyEl.removeChild(historyEl.lastChild);
+
+        update(); save();
+
+        spinning=false; spinBtn.disabled=false; autoBtn.disabled=false;
+        return won;
+      }
+
+      spinBtn.addEventListener('click', ()=>spin().catch(e=>{ console.error(e); spinning=false; spinBtn.disabled=false; autoBtn.disabled=false; }) );
+
+      autoBtn.addEventListener('click', async ()=>{
+        const runs = Math.max(1, Number(autoIn.value)||10);
+        autoBtn.disabled=true; spinBtn.disabled=true;
+        for(let i=0;i<runs;i++){
+          try{
+            const won = await spin();
+            if(won) break;
+          }catch(e){
+            console.error(e);
+            break;
+          }
+          await new Promise(r=>setTimeout(r,180));
+        }
+        autoBtn.disabled=false; spinBtn.disabled=false;
+      });
+
+      resetBtn.addEventListener('click', ()=>{ if(confirm('Reset all data?')){ localStorage.removeItem(STORAGE); location.reload(); } });
+      costIn.addEventListener('input', update); payIn.addEventListener('input', update); guarIn.addEventListener('input', update);
+      update();
+    });
+  </script>
+</body>
+</html>
